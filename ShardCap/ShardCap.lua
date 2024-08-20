@@ -1,5 +1,32 @@
 SHARDCAP_CAP_VALUE=12;
-SHARDCAP_SPAM=false; 
+SHARDCAP_SPAM=false;
+
+SOULBAG_SLOTS = {
+    {4, 24}, {4, 25}, {4, 26}, {4, 27}, {4, 28}, {4, 29}
+}
+function placeShardsInSoulbag()
+    for _, slot in ipairs(SOULBAG_SLOTS) do
+        local bag, slotId = slot[1], slot[2]
+        if GetContainerItemInfo(bag, slotId) == nil then
+            -- Slot ist leer, suche nach einem Seelensplitter in anderen Taschen
+            for searchBag = 0, 4 do
+                for searchSlot = 1, GetContainerNumSlots(searchBag) do
+                    if searchBag ~= bag or searchSlot ~= slotId then
+                        if shardTest(searchBag, searchSlot) then
+                            PickupContainerItem(searchBag, searchSlot)
+                            PickupContainerItem(bag, slotId)
+                            if SHARDCAP_SPAM then
+                                DEFAULT_CHAT_FRAME:AddMessage("ShardCap - Moved shard to bag: " .. bag .. " slot: " .. slotId)
+                            end
+                            return true
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
 
 function delShards(number) -- Debugging
 	i=1; 
@@ -59,7 +86,10 @@ f:SetScript('OnEvent', function()
 	elseif event == "PLAYER_REGEN_ENABLED" then
 		combat = true
 	end
-
+	if bag then
+		placeShardsInSoulbag()
+		bag = nil
+	end
 	if bag and combat then
 		bag, combat = nil, nil
 		delShards(SHARDCAP_CAP_VALUE);
@@ -90,6 +120,7 @@ function ShardCap_PrintInfo()
 	DEFAULT_CHAT_FRAME:AddMessage("ShardCap - Show cap: /shardcap");
 	DEFAULT_CHAT_FRAME:AddMessage("ShardCap - Notifications: /shardcap spam");
 	DEFAULT_CHAT_FRAME:AddMessage("ShardCap - Manual delete: /shardcap delete");
+	 DEFAULT_CHAT_FRAME:AddMessage("ShardCap - Seelensplitter werden automatisch in die Slots 24-29 der letzten Tasche sortiert.");
 	DEFAULT_CHAT_FRAME:AddMessage("ShardCap - Deletes when you exit combat. Deletes from backpack first. Put your soulbag in your last bag slot, like a normal person. Cheers.");
 	DEFAULT_CHAT_FRAME:AddMessage("ShardCap - Website: www.github.com/dogmax/ShardCap");
 end
